@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+<link rel="stylesheet" href="style.css">
+    <title>Docker Task Manager</title>
+    
+</head>
+
+<body>
+
+    <h1>🐳 Docker Task Manager</h1>
+
+    <div class="form">
+
+        <input
+            type="text"
+            id="taskInput"
+            placeholder="Enter a task..."
+        >
+
+        <button onclick="addTask()">
+            Add Task
+        </button>
+
+    </div>
+
+    <div id="tasks"></div>
+
+    <script>
+
+        async function loadTasks() {
+
+            const response =
+                await fetch("/api/tasks");
+
+            const tasks =
+                await response.json();
+
+            const container =
+                document.getElementById("tasks");
+
+            container.innerHTML = "";
+
+            tasks.forEach(task => {
+
+                const element =
+                    document.createElement("div");
+
+                element.className = "task";
+
+                element.innerHTML = `
+                    <span>${task.title}</span>
+
+                    <button
+                        onclick="deleteTask(${task.id})"
+                    >
+                        Delete
+                    </button>
+                `;
+
+                container.appendChild(element);
+
+            });
+        }
+
+
+        async function addTask() {
+
+            const input =
+                document.getElementById("taskInput");
+
+            const title =
+                input.value.trim();
+
+            if (!title) {
+                alert("Please enter a task");
+                return;
+            }
+
+            await fetch("/api/tasks", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    title: title
+                })
+
+            });
+
+            input.value = "";
+
+            loadTasks();
+        }
+
+
+        async function deleteTask(id) {
+
+            await fetch(`/api/tasks/${id}`, {
+                method: "DELETE"
+            });
+
+            loadTasks();
+        }
+
+
+        loadTasks();
+
+    </script>
+
+</body>
+
+</html>
