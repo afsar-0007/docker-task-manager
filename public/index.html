@@ -1,123 +1,265 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-<link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Docker Task Manager</title>
-    
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <div class="app-shell">
 
-    <h1>🐳 Docker Task Manager</h1>
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">🐳</div>
+                <div>
+                    <h1>Docker Task Manager</h1>
+                    <p>Containerize your productivity.</p>
+                </div>
+            </div>
 
-    <div class="form">
+            <div class="status-pill">
+                <span class="status-dot"></span>
+                Docker Environment
+            </div>
+        </header>
 
-        <input
-            type="text"
-            id="taskInput"
-            placeholder="Enter a task..."
-        >
+        <main>
+            <section class="hero">
+                <div>
+                    <p class="eyebrow">TASK DASHBOARD</p>
+                    <h2>Manage your work.<br><span>One container at a time.</span></h2>
+                    <p class="hero-text">
+                        A clean task manager running through a Docker-powered application.
+                    </p>
+                </div>
 
-        <button onclick="addTask()">
-            Add Task
-        </button>
+                <div class="docker-card">
+                    <div class="docker-card-top">
+                        <span>CONTAINER</span>
+                        <span class="running">● RUNNING</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span>$</span> docker ps
+                    </div>
+                    <div class="container-name">
+                        docker-task-manager
+                    </div>
+                    <div class="container-info">
+                        <span>PORT <b>3000</b></span>
+                        <span>STATUS <b>Healthy</b></span>
+                    </div>
+                </div>
+            </section>
 
+            <section class="stats">
+                <div class="stat-card">
+                    <div class="stat-icon blue">✓</div>
+                    <div>
+                        <p>Total Tasks</p>
+                        <h3 id="totalTasks">0</h3>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon green">✓</div>
+                    <div>
+                        <p>Active Tasks</p>
+                        <h3 id="activeTasks">0</h3>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon purple">⚡</div>
+                    <div>
+                        <p>Productivity</p>
+                        <h3 id="productivity">100%</h3>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon orange">☁</div>
+                    <div>
+                        <p>Environment</p>
+                        <h3>Docker</h3>
+                    </div>
+                </div>
+            </section>
+
+            <section class="workspace">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">WORKSPACE</p>
+                        <h2>Your Tasks</h2>
+                    </div>
+                    <span class="task-count" id="taskCount">0 tasks</span>
+                </div>
+
+                <div class="add-task-card">
+                    <div class="input-wrapper">
+                        <span>+</span>
+                        <input
+                            type="text"
+                            id="taskInput"
+                            placeholder="What needs to be done?"
+                            onkeydown="if(event.key === 'Enter') addTask()"
+                        >
+                    </div>
+                    <button class="add-btn" onclick="addTask()">
+                        Add Task <span>→</span>
+                    </button>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <span>Task</span>
+                        <span>Status</span>
+                        <span>Action</span>
+                    </div>
+
+                    <div id="tasks">
+                        <div class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <h3>No tasks yet</h3>
+                            <p>Add your first task above to get started.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <span>🐳 Docker Task Manager</span>
+            <span>Built for DevOps practice • API Connected</span>
+        </footer>
     </div>
 
-    <div id="tasks"></div>
-
     <script>
-
         async function loadTasks() {
+            try {
+                const response = await fetch("/api/tasks");
+                const tasks = await response.json();
 
-            const response =
-                await fetch("/api/tasks");
+                const container = document.getElementById("tasks");
+                container.innerHTML = "";
 
-            const tasks =
-                await response.json();
+                const total = tasks.length;
 
-            const container =
-                document.getElementById("tasks");
+                document.getElementById("totalTasks").textContent = total;
+                document.getElementById("activeTasks").textContent = total;
+                document.getElementById("taskCount").textContent =
+                    `${total} ${total === 1 ? "task" : "tasks"}`;
 
-            container.innerHTML = "";
+                document.getElementById("productivity").textContent =
+                    total > 0 ? "100%" : "—";
 
-            tasks.forEach(task => {
+                if (total === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <h3>No tasks yet</h3>
+                            <p>Add your first task above to get started.</p>
+                        </div>
+                    `;
+                    return;
+                }
 
-                const element =
-                    document.createElement("div");
+                tasks.forEach(task => {
+                    const element = document.createElement("div");
+                    element.className = "task-row";
 
-                element.className = "task";
+                    element.innerHTML = `
+                        <div class="task-title">
+                            <div class="checkbox">✓</div>
+                            <span>${escapeHtml(task.title)}</span>
+                        </div>
 
-                element.innerHTML = `
-                    <span>${task.title}</span>
+                        <div>
+                            <span class="badge">
+                                <span class="mini-dot"></span>
+                                Active
+                            </span>
+                        </div>
 
-                    <button
-                        onclick="deleteTask(${task.id})"
-                    >
-                        Delete
-                    </button>
+                        <div>
+                            <button class="delete-btn" onclick="deleteTask(${task.id})">
+                                Delete
+                            </button>
+                        </div>
+                    `;
+
+                    container.appendChild(element);
+                });
+
+            } catch (error) {
+                console.error("Failed to load tasks:", error);
+                document.getElementById("tasks").innerHTML = `
+                    <div class="error-state">
+                        <strong>⚠ API connection failed</strong>
+                        <p>Make sure your backend container is running.</p>
+                    </div>
                 `;
-
-                container.appendChild(element);
-
-            });
+            }
         }
 
-
         async function addTask() {
-
-            const input =
-                document.getElementById("taskInput");
-
-            const title =
-                input.value.trim();
+            const input = document.getElementById("taskInput");
+            const title = input.value.trim();
 
             if (!title) {
-                alert("Please enter a task");
+                input.focus();
                 return;
             }
 
-            await fetch("/api/tasks", {
+            try {
+                const response = await fetch("/api/tasks", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ title: title })
+                });
 
-                method: "POST",
+                if (!response.ok) {
+                    throw new Error("Failed to add task");
+                }
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                input.value = "";
+                await loadTasks();
+                input.focus();
 
-                body: JSON.stringify({
-                    title: title
-                })
-
-            });
-
-            input.value = "";
-
-            loadTasks();
+            } catch (error) {
+                console.error(error);
+                alert("Could not add task. Check your API.");
+            }
         }
-
 
         async function deleteTask(id) {
+            try {
+                const response = await fetch(`/api/tasks/${id}`, {
+                    method: "DELETE"
+                });
 
-            await fetch(`/api/tasks/${id}`, {
-                method: "DELETE"
-            });
+                if (!response.ok) {
+                    throw new Error("Failed to delete task");
+                }
 
-            loadTasks();
+                await loadTasks();
+
+            } catch (error) {
+                console.error(error);
+                alert("Could not delete task. Check your API.");
+            }
         }
 
+        function escapeHtml(value) {
+            const div = document.createElement("div");
+            div.textContent = value;
+            return div.innerHTML;
+        }
 
         loadTasks();
-
     </script>
-
 </body>
-
 </html>
